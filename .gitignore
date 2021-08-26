@@ -1,0 +1,11 @@
+/*
+.DS_Store
+
+!.gitignore
+!README.md
+!.idea/
+!Assets/
+[Aa]ssets/Plugins/**/*.meta
+!Packages/
+!ProjectSettings/
+!ci/
