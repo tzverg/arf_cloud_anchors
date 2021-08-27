@@ -1,6 +1,6 @@
-# ARF_TestProject
+# arf_cloud_anchors
 
-Test project for learning AR Foundation package and technology.
+Test project for learning AR Foundation package and technology cloud anchors.
 
 ## Requirements
 
