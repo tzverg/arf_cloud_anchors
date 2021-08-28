@@ -27,7 +27,7 @@ MonoBehaviour:
   m_Name: Standalone Settings
   m_EditorClassIdentifier: 
   m_LoaderManagerInstance: {fileID: 486471099477155203}
-  m_InitManagerOnStart: 0
+  m_InitManagerOnStart: 1
 --- !u!114 &-1047757011982855517
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41,7 +41,7 @@ MonoBehaviour:
   m_Name: WebGL Settings
   m_EditorClassIdentifier: 
   m_LoaderManagerInstance: {fileID: 5261550225377568148}
-  m_InitManagerOnStart: 0
+  m_InitManagerOnStart: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
