@@ -1,12 +1,15 @@
 using UnityEngine;
+using UnityEngine.XR.ARFoundation;
 
 namespace AppName.App.Modules.Main
 {
     public class MainScene : MonoBehaviour
     {
-        private void Start()
+        [SerializeField] private int _targetFrameRate = 60;
+
+        private void Awake()
         {
-            Debug.Log("Hello World!");
+            UnityEngine.Application.targetFrameRate = _targetFrameRate;
         }
     }
 }

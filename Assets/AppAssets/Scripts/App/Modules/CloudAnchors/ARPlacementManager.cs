@@ -12,15 +12,18 @@ namespace CloudAnchors
         [SerializeField] private ARAnchorManager _arAnchorManager = null;
         [SerializeField] private ARRaycastManager _arRaycastManager = null;
         [SerializeField] private ARCloudAnchorManager _arCloudAnchorManager = null;
+        [SerializeField] private UIManager _uiManager = null;
         private GameObject _placedGameObject = null;
         private List<ARRaycastHit> _hitResultList;
 
         [Inject] private void Construct(
+            UIManager uiManager,
             ARAnchorManager arAnchorManager,
             ARRaycastManager arRaycastManager,
             ARCloudAnchorManager arCloudAnchorManager
         )
         {
+            _uiManager = uiManager;
             _arAnchorManager = arAnchorManager;
             _arRaycastManager = arRaycastManager;
             _arCloudAnchorManager = arCloudAnchorManager;
@@ -65,7 +68,6 @@ namespace CloudAnchors
         {
             if (_placedGameObject != null)
             {
-                Debug.Log($"destroy object: {_placedGameObject.name}");
                 _placedGameObject.GetComponentInChildren<SpiderKiller>().OnKillObject();
             }
             else
@@ -76,10 +78,11 @@ namespace CloudAnchors
 
         void Update()
         {
+            if (!TryGetTouchPosition(out Vector2 _touchPosition))
+                return;
+            
             if (_placedGameObject == null)
             {
-                if(!TryGetTouchPosition(out Vector2 _touchPosition))
-                    return;
                 if (_arRaycastManager.Raycast(_touchPosition, _hitResultList, UnityEngine.XR.ARSubsystems.TrackableType.Planes))
                 {
                     Pose hitPose = _hitResultList[0].pose;
@@ -93,6 +96,16 @@ namespace CloudAnchors
                     _placedGameObject.transform.parent = arAnchor.transform;
 
                     _arCloudAnchorManager.QueueAnchor(arAnchor);
+                }
+            }
+            else
+            {
+                if (_uiManager.GetChangeAnchorPositionToggleValue() && Input.GetMouseButtonUp(0))
+                {
+                    if (_arRaycastManager.Raycast(_touchPosition, _hitResultList, UnityEngine.XR.ARSubsystems.TrackableType.Planes))
+                    {
+                        _placedGameObject.transform.position = _hitResultList[0].pose.position;
+                    }
                 }
             }
         }

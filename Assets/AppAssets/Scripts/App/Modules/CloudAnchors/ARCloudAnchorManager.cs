@@ -6,16 +6,20 @@ using Zenject;
 
 namespace CloudAnchors
 {
+    enum CloudAnchorStorage { GoogleCloud, AzureSpatial }
     public class ARCloudAnchorManager : MonoBehaviour
     {
         [SerializeField] private Camera _arCamera = null;
         [SerializeField] private ARPlacementManager _arPlacementManager = null;
         [SerializeField] private ARAnchorManager _arAnchorManager = null;
+        [SerializeField] private UIManager _uiManager = null;
         [SerializeField] [Range(0F, 100F)] private uint _resolveAnchorPassedTimeout = 10;
 
         private ARAnchor _pendingHostARAnchor = null;
         private ARCloudAnchor _cloudAnchor = null;
-        
+
+        [SerializeField] private CloudAnchorStorage _cloudAnchorStorage = CloudAnchorStorage.GoogleCloud;
+
         private Pose ARCameraPose
         {
             get
@@ -27,12 +31,19 @@ namespace CloudAnchors
         private string _anchorToResolveID;
         private bool _anchorResolveInProgress = false;
         private bool _anchorHostingInProgress = false;
+        private bool _featureMapQualityCheckingProgress = false;
 
         private float _safeToResolvePassed = 0F;
 
-        [Inject] private void Construct(Camera arCamera, ARAnchorManager arAnchorManager, ARPlacementManager arPlacementManager)
+        [Inject] private void Construct(
+            Camera arCamera,
+            UIManager uiManager,
+            ARAnchorManager arAnchorManager, 
+            ARPlacementManager arPlacementManager
+        )
         {
             _arCamera = arCamera;
+            _uiManager = uiManager;
             _arAnchorManager = arAnchorManager;
             _arPlacementManager = arPlacementManager;
         }
@@ -48,11 +59,6 @@ namespace CloudAnchors
             {
                 Debug.Log("Host anchor call in progress");
 
-                // recomended up to 30 seconds of scanning before calling host anchor
-                FeatureMapQuality quality = _arAnchorManager.EstimateFeatureMapQualityForHosting(ARCameraPose);
-
-                Debug.Log($"Feature Map Quality is: {quality}");
-
                 _cloudAnchor = _arAnchorManager.HostCloudAnchor(_pendingHostARAnchor, 1);
 
                 if(_cloudAnchor == null)
@@ -61,7 +67,7 @@ namespace CloudAnchors
                 }
                 else
                 {
-                    _anchorHostingInProgress = true;
+                    _featureMapQualityCheckingProgress = true;
                 }
             }
 
@@ -69,7 +75,10 @@ namespace CloudAnchors
             {
                 Debug.Log("Resolve anchor call in progress");
 
+                _anchorToResolveID = _uiManager.GetCloudAnchorIDFromInputField();
                 _cloudAnchor = _arAnchorManager.ResolveCloudAnchorId(_anchorToResolveID);
+                
+                _uiManager.ToggleResolvePanelVisible();
 
                 if(_cloudAnchor == null)
                 {
@@ -81,14 +90,34 @@ namespace CloudAnchors
                 }
             }
 
+            private void CheckFeatureMapQualityProgress()
+            {
+                // recomended up to 30 seconds of scanning before calling host anchor
+                FeatureMapQuality quality = _arAnchorManager.EstimateFeatureMapQualityForHosting(ARCameraPose);
+                _uiManager.SetTextFMQ(quality.ToString());
+                
+                switch (quality)
+                {
+                    case FeatureMapQuality.Good:
+                        _featureMapQualityCheckingProgress = false;
+                        _anchorHostingInProgress = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
             public void CheckAnchorHostingProgress()
             {
                 CloudAnchorState cloudAnchorState = _cloudAnchor.cloudAnchorState;
+                _uiManager.SetTextCAS(cloudAnchorState.ToString());
 
                 if(cloudAnchorState == CloudAnchorState.Success)
                 {
                     _anchorHostingInProgress = false;
                     _anchorToResolveID = _cloudAnchor.cloudAnchorId;
+
+                    _uiManager.SetCloudAnchorIDInsideInputField(_anchorToResolveID);
 
                     Debug.Log($"Cloud anchor hosting state: {cloudAnchorState}");
                 }
@@ -102,6 +131,7 @@ namespace CloudAnchors
             public void CheckAnchorResolvingProgress()
             {
                 CloudAnchorState cloudAnchorState = _cloudAnchor.cloudAnchorState;
+                _uiManager.SetTextCAS(cloudAnchorState.ToString());
 
                 Debug.Log($"Cloud anchor resolving state: {cloudAnchorState}, id: {_anchorToResolveID}");
 
@@ -120,8 +150,26 @@ namespace CloudAnchors
             }
         #endregion
 
+        public void DropdownValueChanged(TMPro.TMP_Dropdown change)
+        { 
+            switch (change.value)
+            {
+                case (int)CloudAnchorStorage.AzureSpatial:
+                    _cloudAnchorStorage = CloudAnchorStorage.AzureSpatial;
+                    break;
+                default:
+                    _cloudAnchorStorage = CloudAnchorStorage.GoogleCloud;
+                    break;
+            }
+        }
+
         private void Update()
         {
+            if (_featureMapQualityCheckingProgress)
+            {
+                CheckFeatureMapQualityProgress();
+            }
+
             // checking for host result
             if (_anchorHostingInProgress)
             {

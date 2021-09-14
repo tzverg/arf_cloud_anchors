@@ -15,7 +15,8 @@ namespace CloudAnchors
 
         private void DestroyMe()
         {
-            Destroy(gameObject);
+            Debug.Log($"destroy object: {gameObject.name}");
+            Destroy(transform.parent);
         }
 
         public void OnKillObject()
